@@ -29,7 +29,7 @@ promise
             Name: data.name,
             Picture: data.imageUrl,
             PictureTxt: data.altTxt,
-            Price: data.price
+            //Price: data.price
         }
     })
 
@@ -76,4 +76,6 @@ promise
         else{
             window.alert("Erreur lors de l'ajout au panier. Vérifier la couleur et la quantité")
         }
+
+        
 })

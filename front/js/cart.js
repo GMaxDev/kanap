@@ -1,186 +1,189 @@
-const myCart = JSON.parse(localStorage.getItem("myCart"))
-const submitBtn = document.querySelector("#order")
-const firstName = document.querySelector("#firstName")
-const lastName = document.querySelector("#lastName")
-const address = document.querySelector("#address")
-const city = document.querySelector("#city")
-const email = document.querySelector("#email")
+const myCart = JSON.parse(localStorage.getItem("myCart"));
+const submitBtn = document.querySelector("#order");
+const firstName = document.querySelector("#firstName");
+const lastName = document.querySelector("#lastName");
+const address = document.querySelector("#address");
+const city = document.querySelector("#city");
+const email = document.querySelector("#email");
 
-//Affiche tous les élements du panier contenu dans le localStorage
+const baseUrl = "http://localhost:3000/api"
+const promise = fetch(`${baseUrl}/products`)
+let cart = JSON.parse(localStorage.getItem("myCart"))
+let myProduct = {}
+let cartPriceTotal = 0
+let cartKanapTotal = 0
 
-function getCart(){
-    let cart = JSON.parse(localStorage.getItem("myCart"))
-    for(let i in cart){
-    document.querySelector("#cart__items").innerHTML += showCart(cart[i])
-    }
-}
-function showCart(product){
-    return `<article class="cart__item" data-id="${product.ID}" data-color="${product.Color}">
-    <div class="cart__item__img">
-      <img src="${product.Picture}" alt="${product.PictureTxt}">
-    </div>
-    <div class="cart__item__content">
-      <div class="cart__item__content__description">
-        <h2>${product.Name}</h2>
-        <p>${product.Color}</p>
-        <p>${product.Price} €</p>
+function showTotal(){
+  for(let i in cart){
+
+    let promise = fetch(`${baseUrl}/products/${cart[i].ID}`)
+    promise
+    .then(response => response.json())
+    .then(data => {
+  
+      document.querySelector("#cart__items").innerHTML +=
+  
+      `<article class="cart__item" data-id="${cart[i].ID}" data-color="${cart[i].Color}">
+      <div class="cart__item__img">
+        <img src="${cart[i].Picture}" alt="${cart[i].PictureTxt}">
       </div>
-      <div class="cart__item__content__settings">
-        <div class="cart__item__content__settings__quantity">
-          <p>Qté : </p>
-          <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${product.Quantity}">
+      <div class="cart__item__content">
+        <div class="cart__item__content__description">
+          <h2>${cart[i].Name}</h2>
+          <p>${cart[i].Color}</p>
+          <p>${data.price}€</p>
         </div>
-        <div class="cart__item__content__settings__delete">
-          <p class="deleteItem">Supprimer</p>
+        <div class="cart__item__content__settings">
+          <div class="cart__item__content__settings__quantity">
+            <p>Qté : </p>
+            <input type="number" class="itemQuantity" name="itemQuantity" min="1" max="100" value="${cart[i].Quantity}" onchange="changeQuantity('${cart[i].Name}', '${cart[i].Color}')">
+          </div>
+          <div class="cart__item__content__settings__delete">
+            <p class="deleteItem">Supprimer</p>
+          </div>
         </div>
       </div>
-    </div>
-  </article>`
-}
-getCart()
+    </article>`
+  
+    cartPriceTotal += (data.price * cart[i].Quantity)
+    cartKanapTotal += parseInt(cart[i].Quantity)
+  
+    document.getElementById("totalQuantity").innerHTML =
+    `${cartKanapTotal}`
+    document.getElementById("totalPrice").innerHTML =
+    `${cartPriceTotal}`
 
+        
+    // Gestion Bouton "Supprimer"
 
+    const deleteBtn = document.querySelectorAll(".deleteItem");
 
-//gestion du bouton "Supprimer"
-const deleteBtn = document.querySelectorAll(".deleteItem")
+    // Pour itérer sur tous les boutons supprimés. A la selection dans le DOM, le résultat est rendu sous forme d'un array
+    for(let b = 0; b < deleteBtn.length; b++){
+      deleteBtn[b].addEventListener("click", function(event){
+        let removeProductId = myCart[b].ID;
+        let removeProductColor = myCart[b].Color
 
-//permet d'itérer sur tous les boutons supprimés
-for(let b = 0; b < deleteBtn.length; b++){
-  deleteBtn[b].addEventListener("click", function(event){
-    let removeProductId = myCart[b].ID
-    let removeProductColor = myCart[b].Color
+        // Ici filter() sert a garder uniquement les produits qui n'ont pas été sélectionnés 
+        const myNewCart = myCart.filter(element => element.ID !== removeProductId || element.Color !== removeProductColor);
 
-    // Ici filter() sert a garder uniquement les produits qui n'ont pas été sélectionnés 
-    const myNewCart = myCart.filter(element => element.ID !== removeProductId || element.Color !== removeProductColor)
+        localStorage.setItem("myCart", JSON.stringify(myNewCart));
 
-    localStorage.setItem("myCart", JSON.stringify(myNewCart))
+        alert("Ce produit a bien été supprimé du panier");
 
-    alert("Ce produit a bien été supprimé du panier")
-
-    location.reload()
-  })
-}
-
-
-
-// Affiche le nombre total de produit dans le panier (en tenant compte de la quantité de chacun)
-function showTotalQuantity(){
-let totalQuantity = 0
-const showQuantity = document.querySelector("#totalQuantity")
-
-for(let p in myCart){
-  totalQuantity += myCart[p].Quantity
-}
-
-showQuantity.innerHTML = totalQuantity
-}
-showTotalQuantity()
-
-
-// Affiche le prix total
-function showTotalPrice(){
-let totalPrice = 0
-const showPrice = document.querySelector("#totalPrice")
-
-for(let k in myCart){
-  totalPrice += (myCart[k].Price * myCart[k].Quantity)
-}
-showPrice.innerHTML = totalPrice
-}
-showTotalPrice()
-
-
-//modifie la quantité directement dans le panier 
-function changeQuantity() {
-  const quantitySelecter = document.querySelectorAll(".itemQuantity")
-
-  for (let p = 0; p < quantitySelecter.length; p++){
-      quantitySelecter[p].addEventListener("change" , function(){
- 
-          const oldQuantity = myCart[p].Quantity
-          const quantityChanged = quantitySelecter[p].valueAsNumber
-          
-          const quantityControl = myCart.find(element => element.quantityChanged !== oldQuantity)
-
-        if(quantityChanged >= 1){
-          quantityControl.Quantity = quantityChanged
-          myCart[p].Quantity = quantityControl.Quantity
-        }
-        else{
-          myCart.filter(element => element.Quantity >= 1)
-        }
-          localStorage.setItem("myCart", JSON.stringify(myCart))
-          location.reload()
+        location.reload();
       })
+    }
+
+    function changeQuantity() {
+      const quantitySelecter = document.querySelectorAll(".itemQuantity");
+    
+      for (let p = 0; p < quantitySelecter.length; p++){
+          quantitySelecter[p].addEventListener("change" , function(){
+     
+              const oldQuantity = myCart[p].Quantity;
+              const quantityChanged = quantitySelecter[p].valueAsNumber;
+              
+              const quantityControl = myCart.find(element => element.quantityChanged !== oldQuantity);
+    
+            if(quantityChanged >= 1){
+              if(quantityChanged >100){
+                quantityChanged = 100
+              }
+              quantityControl.Quantity = quantityChanged;
+              myCart[p].Quantity = quantityControl.Quantity;
+            }
+            else{
+              myCart.filter(element => element.Quantity >= 1)
+            }
+              localStorage.setItem("myCart", JSON.stringify(myCart));
+              location.reload();
+          })
+      }
+    }
+
+    changeQuantity()
+
+    });
   }
 }
-changeQuantity()
 
-//controle des informations user
-const userForm = document.querySelectorAll("form input")
+showTotal();
+
+
+//  Controle des informations user
+
+const userForm = document.querySelectorAll("form input");
+
 function datasUserControl() {
 
-  //controle du prenom
-  const firstNameValidation = document.querySelector("#firstNameErrorMsg")
+  // Controle du prenom
+  const firstNameValidation = document.querySelector("#firstNameErrorMsg");
     firstName.addEventListener("change", function (e) {
         if (/^[A-Z][A-Za-z\é\è\ê\-]+$/.test(e.target.value)) {
-            firstNameValidation.innerHTML = ""
+            firstNameValidation.innerHTML = "";
         } else {
-            firstNameValidation.innerHTML = "Le prénom doit commencer par une majuscule et ne contenir que des lettres."
+            firstNameValidation.innerHTML = "Le prénom doit commencer par une majuscule et ne contenir que des lettres.";
         }
     })
 
-  //controle du nom
-  const lastNameValidation = document.querySelector("#lastNameErrorMsg")
+  // Controle du nom
+  const lastNameValidation = document.querySelector("#lastNameErrorMsg");
   lastName.addEventListener("change", function (e) {
       if (/^[A-Z][A-Za-z\é\è\ê\-]+$/.test(e.target.value)) {
-          lastNameValidation.innerHTML = ""
+          lastNameValidation.innerHTML = "";
       } else {
           lastNameValidation.innerHTML = "Nom incorrect"
       }
   })
 
-  //controle de l'adresse
-  const addressValidation = document.querySelector("#addressErrorMsg")
+  // Controle de l'adresse postale (du type "1 rue de maréchal leclerc")
+  const addressValidation = document.querySelector("#addressErrorMsg");
   address.addEventListener("change", function(e){
     if(/^.{3,144}$/.test(e.target.value)){
-      addressValidation.innerHTML = ""
+      addressValidation.innerHTML = "";
     }
     else{
       addressValidation.innerHTML = "Adresse incorrect"
     }
   })
 
-  //controle de la ville
-  const cityValidation = document.querySelector("#cityErrorMsg")
+  // Controle de la ville
+  const cityValidation = document.querySelector("#cityErrorMsg");
   city.addEventListener("change", function (e) {
       if (/^[A-Z][A-Za-z\é\è\ê\-]+$/.test(e.target.value)) {
-          cityValidation.innerHTML = ""
+          cityValidation.innerHTML = "";
       } else {
           cityValidation.innerHTML = "Veuillez renseigner une ville existante et commencer par une majuscule"
       }
   })
 
-  //controle du mail
-  const emailValidation = document.querySelector("#emailErrorMsg")
+  // Controle de l'adresse mail
+  const emailValidation = document.querySelector("#emailErrorMsg");
   email.addEventListener("change", function (e) {
       if (/^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/.test(e.target.value)) {
-          emailValidation.innerHTML = ""
+          emailValidation.innerHTML = "";
       } else {
           emailValidation.innerHTML = "Adresse email incorrect !"
       }
   })
 }
-datasUserControl()
+
+
+datasUserControl();
+
+
 
 // Envoyer les données user et récupère l'ID de la commmande
+
+
 submitBtn.addEventListener("click", function (e) {
-    e.preventDefault()
+    e.preventDefault();
     if(firstName.value !== "" && lastName.value !== "" && address.value !== "" && city.value !== "" && email.value !== ""){
-    let productsInfo = []
+    let productsInfo = [];
  
     for (let i = 0; i < myCart.length; i++) {
-        productsInfo.push(myCart[i].ID)
+        productsInfo.push(myCart[i].ID);
     }
  
     const userInfo = {
@@ -206,7 +209,7 @@ submitBtn.addEventListener("click", function (e) {
     .then((data) => {
       
       // Passe le "orderId" en paramètre de l'url
-      window.location.href = `confirmation.html?orderId=${data.orderId}`
+      window.location.href = `confirmation.html?orderId=${data.orderId}`;
       localStorage.clear()
     })
     .catch((err) => {
